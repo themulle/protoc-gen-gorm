@@ -22,6 +22,7 @@ const (
 	typeEnum    = 14
 
 	protoTypeTimestamp = "Timestamp" // last segment, first will be *google_protobufX
+	protoTypeTime      = "Time"
 	protoTypeJSON      = "JSONValue"
 	protoTypeUUID      = "UUID"
 	protoTypeUUIDValue = "UUIDValue"
@@ -272,7 +273,7 @@ func (p *OrmPlugin) parseBasicFields(msg *generator.Descriptor) {
 				if p.dbEngine == ENGINE_POSTGRES {
 					fieldOpts.Tag = tagWithType(tag, "uuid")
 				}
-			} else if rawType == protoTypeTimestamp {
+			} else if rawType == protoTypeTimestamp || rawType == protoTypeTime {
 				p.UsingGoImports(stdTimeImport)
 				typePackage = stdTimeImport
 				fieldType = fmt.Sprintf("*%s.Time", typePackage)
@@ -799,6 +800,13 @@ func (p *OrmPlugin) generateFieldConversion(message *generator.Descriptor, field
 				p.P(`if to.`, fieldName, `, err = `, p.Import(ptypesImport), `.TimestampProto(*m.`, fieldName, `); err != nil {`)
 				p.P(`return to, err`)
 				p.P(`}`)
+				p.P(`}`)
+			}
+		} else if coreType == protoTypeTime {
+			if toORM {
+				p.P(`if m.`, fieldName, ` != nil {`)
+				p.P(`t := *m.`, fieldName)
+				p.P(`to.`, fieldName, ` = &t`)
 				p.P(`}`)
 			}
 		} else if coreType == protoTypeJSON {
